@@ -1,0 +1,97 @@
+<html>
+<head>
+    <title></title>
+    <script type="text/javascript" src="js/lib/dbscan.js"></script>
+    <script type="text/javascript" src="js/lib/geo.js"></script>
+    <script type="text/javascript" src="js/placebook.js"></script>
+    <script type="text/javascript" src="js/FlickrSearch.js"></script>
+    <script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAFGU9DEWo8L74g-GXz_-X127th39c9bAg&sensor=false"></script>
+</head>
+<body>
+<form method="get" action="nothing" id="place_search_form">
+    <input value="" id="place_search" type="text" tabindex="1"></input>
+    <div id="examples">
+        examples: <a href="#" id="search_phuket">Phuket</a>,
+        <a href="#" id="search_bali">Bali</a>,
+        <a href="#" id="search_frankfurt">Frankfurt</a>
+    </div>
+
+</form>
+<div id="map_canvas" style="height: 450px; width: 990px"></div>
+<script type="text/javascript">
+    var app = new PhotoPlaceBookApp();
+    var search = new FlickrSearch();
+    var data;
+
+    function jsonFlickrApi(response) {
+        data = [];
+        var photos_length = response.photos.photo.length;
+        for (var i = 0; i < photos_length; i++) {
+            var photo = response.photos.photo[i];
+            var lat = parseFloat(photo.latitude);
+            var lon = parseFloat(photo.longitude);
+            data.push({
+                id:       i,
+                geoPoint: new LatLon(lat, lon),
+                thumbnail: photo.url_t
+            });
+        };
+
+        app.setData(data);
+
+        var clusters = app.findClusters();
+        console.debug(clusters);
+
+        var center = data[clusters[0][0]].geoPoint;
+        var mapOptions = {
+            zoom: 12,
+            center: new google.maps.LatLng(center.lat(), center.lon()),
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+          };
+        var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+
+        for (var j = clusters.length - 1; j >= 0; j--) {
+            for (var i = clusters[j].length - 1; i >= 0; i--) {
+                var photo = data[clusters[j][i]]
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(photo.geoPoint.lat(), photo.geoPoint.lon()),
+                    icon: photo.thumbnail,
+                    map: map
+                });
+            };
+        };
+    }
+
+    document.getElementById("place_search_form").onsubmit = function(e) {
+        debugger
+        e.preventDefault();
+        var element = document.getElementById("place_search");
+        search.findByKeyword(element.getAttribute('value'));
+
+        return false;
+    };
+
+
+    document.getElementById("search_" + "phuket").onclick = function(e) {
+        var element = document.getElementById("place_search");
+        element.setAttribute("value", "phuket");
+        search.findByKeyword(element.getAttribute('value'));
+        return false;
+    }
+    document.getElementById("search_" + "bali").onclick = function(e) {
+        var element = document.getElementById("place_search");
+        element.setAttribute("value", "bali");
+        search.findByKeyword(element.getAttribute('value'));
+        return false;
+    }
+    document.getElementById("search_" + "frankfurt").onclick = function(e) {
+        var element = document.getElementById("place_search");
+        element.setAttribute("value", "frankfurt");
+        search.findByKeyword(element.getAttribute('value'));
+        return false;
+    }
+
+
+</script>
+</body>
+</html>
